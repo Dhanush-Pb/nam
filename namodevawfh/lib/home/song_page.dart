@@ -5,10 +5,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:namodevawfh/home/awsome.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:spotify/spotify.dart' as spotify;
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:http/http.dart' as http;
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 class SongPage extends StatefulWidget {
   const SongPage({super.key});
@@ -26,9 +28,10 @@ class _SongPageState extends State<SongPage> {
   Duration? duration;
   String? songName;
   String? artistName;
+  var progres;
   String? songImage;
   final Color myColor = Color.fromARGB(255, 20, 65, 82);
-
+  bool isPlaying = false;
   var audi;
   List<Lyric>? lyrics;
   final ItemScrollController itemScrollController = ItemScrollController();
@@ -47,7 +50,22 @@ class _SongPageState extends State<SongPage> {
   void initState() {
     setState(() {});
     super.initState();
+
+    _initializeNotifications();
     fetchSongData();
+    _requestPermissions();
+  }
+
+  void _requestPermissions() async {
+    bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
+    if (!isAllowed) {
+      // Request permission to send notifications
+      await AwesomeNotifications().requestPermissionToSendNotifications();
+    }
+  }
+
+  Future<void> _initializeNotifications() async {
+    await AwesomeMusicNotification.initialize();
   }
 
   Future<void> fetchSongData() async {
@@ -69,7 +87,9 @@ class _SongPageState extends State<SongPage> {
       audi = manifest.audioOnly.last.url;
 
       _initializeLyricsAndSubscription(player, songName!, artistName!);
-      setState(() {});
+      setState(() {
+        setState(() {});
+      });
     }
   }
 
@@ -246,6 +266,7 @@ class _SongPageState extends State<SongPage> {
                   child: StreamBuilder<Duration>(
                     stream: player.onPositionChanged,
                     builder: (context, snapshot) {
+                      progres = snapshot.data;
                       return ProgressBar(
                         progress: snapshot.data ?? const Duration(seconds: 0),
                         total: duration ?? const Duration(minutes: 4),
@@ -288,10 +309,27 @@ class _SongPageState extends State<SongPage> {
                       onPressed: () async {
                         if (player.state == PlayerState.playing) {
                           await player.pause();
+                          setState(() {
+                            isPlaying = false;
+                          });
+                          await AwesomeMusicNotification
+                              .cancelNotification(); // Cancel notification when paused
                         } else {
                           await player.play(UrlSource(audi.toString()));
+                          setState(() {
+                            isPlaying = true;
+                          });
+                          // Show music notification while playing
+                          await AwesomeMusicNotification.showMusicNotification(
+                            title: songName ?? 'Unknown Title',
+                            artist: artistName ?? 'Unknown Artist',
+                            isPlaying: true,
+                            imageUrl: songImage.toString(),
+                            progress: progres ?? Duration(seconds: 20),
+                            total: duration ?? const Duration(minutes: 4),
+                            //color: myColor,
+                          );
                         }
-                        setState(() {});
                       },
                       icon: Icon(
                         player.state == PlayerState.playing

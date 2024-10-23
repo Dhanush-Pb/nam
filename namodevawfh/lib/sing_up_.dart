@@ -28,7 +28,7 @@ class _SingUPpageState extends State<SingUPpage> {
           ),
           Positioned(
             left: 20,
-            top: 250,
+            top: screenSize.height * 0.28,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: BackdropFilter(
@@ -174,7 +174,7 @@ class _SingUPpageState extends State<SingUPpage> {
                               borderRadius: BorderRadius.circular(
                                   30), // Optional: Add rounded corners if needed
                             ),
-                            height: 60,
+                            height: screenSize.height * 0.07,
                             width: screenSize.width * 0.6,
                             child: const Center(
                               child: Text(
